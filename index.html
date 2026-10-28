@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나만의 메모장 & 기록장</title>
+  <style>
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+
+    /* 입력 폼 카드는 기본적으로 숨겨져 있거나 펼칠 수 있음 */
+    .editor-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      font-family: inherit;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #e5e7eb;
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background-color: #d1d5db;
+    }
+
+    /* 검색 및 필터 영역 */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .controls input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    /* 글 목록 영역 */
+    .post-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .post-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .post-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .post-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .category-badge {
+      display: inline-block;
+      background: #e0e7ff;
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .post-content {
+      white-space: pre-wrap;
+      margin-top: 10px;
+      color: #374151;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      justify-content: flex-end;
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 0.85rem;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 40px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>📝 나만의 기록 공간</h1>
+    </header>
+
+    <!-- 글 작성 및 수정 폼 -->
+    <div class="editor-card">
+      <input type="hidden" id="edit-id">
+      <div class="form-group">
+        <input type="text" id="post-title" placeholder="제목을 입력하세요..." required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="post-category" placeholder="카테고리 (예: 일기, 메모, 아이디어)">
+        </div>
+      </div>
+      <div class="form-group">
+        <textarea id="post-content" placeholder="내용을 작성하세요..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="cancel-btn" class="btn-secondary" style="display:none;" onclick="resetForm()">취소</button>
+        <button type="button" id="save-btn" class="btn-primary" onclick="savePost()">저장하기</button>
+      </div>
+    </div>
+
+    <!-- 검색 및 필터 -->
+    <div class="controls">
+      <input type="text" id="search-input" placeholder="글 제목이나 내용 검색..." oninput="renderPosts()">
+    </div>
+
+    <!-- 작성된 글 목록 -->
+    <div class="post-list" id="post-list"></div>
+  </div>
+
+  <script>
+    let posts = JSON.parse(localStorage.getItem('my_simple_posts') || '[]');
+
+    function saveToStorage() {
+      localStorage.setItem('my_simple_posts', JSON.stringify(posts));
+    }
+
+    function savePost() {
+      const title = document.getElementById('post-title').value.trim();
+      const category = document.getElementById('post-category').value.trim() || '일반';
+      const content = document.getElementById('post-content').value.trim();
+      const editId = document.getElementById('edit-id').value;
+
+      if (!title || !content) {
+        alert('제목과 내용을 모두 입력해 주세요.');
+        return;
+      }
+
+      if (editId) {
+        // 수정 모드
+        posts = posts.map(p => p.id === editId ? {
+          ...p,
+          title,
+          category,
+          content,
+          updatedAt: new Date().toLocaleString('ko-KR')
+        } : p);
+      } else {
+        // 새 글 작성
+        const newPost = {
+          id: Date.now().toString(),
+          title,
+          category,
+          content,
+          createdAt: new Date().toLocaleString('ko-KR')
+        };
+        posts.unshift(newPost);
+      }
+
+      saveToStorage();
+      resetForm();
+      renderPosts();
+    }
+
+    function editPost(id) {
+      const post = posts.find(p => p.id === id);
+      if (!post) return;
+
+      document.getElementById('edit-id').value = post.id;
+      document.getElementById('post-title').value = post.title;
+      document.getElementById('post-category').value = post.category;
+      document.getElementById('post-content').value = post.content;
+
+      document.getElementById('save-btn').textContent = '수정 완료';
+      document.getElementById('cancel-btn').style.display = 'inline-block';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deletePost(id) {
+      if (confirm('정말 삭제하시겠습니까?')) {
+        posts = posts.filter(p => p.id !== id);
+        saveToStorage();
+        renderPosts();
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('edit-id').value = '';
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-category').value = '';
+      document.getElementById('post-content').value = '';
+      document.getElementById('save-btn').textContent = '저장하기';
+      document.getElementById('cancel-btn').style.display = 'none';
+    }
+
+    function renderPosts() {
+      const listEl = document.getElementById('post-list');
+      const keyword = document.getElementById('search-input').value.toLowerCase();
+
+      const filtered = posts.filter(p => 
+        p.title.toLowerCase().includes(keyword) || 
+        p.content.toLowerCase().includes(keyword) ||
+        p.category.toLowerCase().includes(keyword)
+      );
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="empty-msg">작성된 글이 없습니다.</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(post => `
+        <div class="post-card">
+          <div class="post-header">
+            <div>
+              <span class="category-badge">${escapeHtml(post.category)}</span>
+              <span class="post-title">${escapeHtml(post.title)}</span>
+            </div>
+          </div>
+          <div class="post-meta">작성일: ${post.createdAt} ${post.updatedAt ? `(수정됨: ${post.updatedAt})` : ''}</div>
+          <div class="post-content">${escapeHtml(post.content)}</div>
+          <div class="post-actions">
+            <button class="btn-secondary btn-sm" onclick="editPost('${post.id}')">수정</button>
+            <button class="btn-danger btn-sm" onclick="deletePost('${post.id}')">삭제</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // 초기 실행
+    renderPosts();
+  </script>
+</body>
+</html>
